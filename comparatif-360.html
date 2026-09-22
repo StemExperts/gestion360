@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Indice de gestion 360 · Comparatif</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:       #002169;
+  --yellow:     #ffed00;
+  --green:      #95c11f;
+  --teal:       #0090ac;
+  --blue:       #1d71b8;
+  --navy-soft:  #1a3a7a;
+  --navy-light: #d0d8ee;
+  --cream:      #f5f7fa;
+  --cream-dark: #e8ecf2;
+  --white:      #ffffff;
+  --text:       #002169;
+  --text-soft:  #4a5a8a;
+  --shadow:     0 4px 28px rgba(0,33,105,0.10);
+  --shadow-lg:  0 10px 48px rgba(0,33,105,0.18);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(--text); min-height: 100vh; }
+
+/* ── Header ── */
+.header { background: var(--navy); padding: 32px 48px; position: relative; overflow: hidden; }
+.header::after { content:''; position:absolute; bottom:0; left:0; right:0; height:4px; background: linear-gradient(90deg, var(--yellow), var(--green), var(--teal), var(--blue)); }
+.header-inner { max-width: 1100px; margin: 0 auto; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.header-title { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; color:var(--white); letter-spacing:-0.5px; }
+.header-title span { color: var(--yellow); }
+.header-sub { font-size:12px; color: rgba(255,255,255,0.65); margin-top:4px; }
+
+/* ── Filter bar ── */
+.filter-bar { max-width:1100px; margin:28px auto 0; padding:0 24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.filter-bar label { font-size:13px; font-weight:600; color:var(--text-soft); white-space:nowrap; }
+.filter-bar select { background:var(--white); border:2px solid var(--navy-light); border-radius:8px; padding:8px 14px; font-size:13px; color:var(--text); font-family:inherit; cursor:pointer; outline:none; }
+.filter-bar select:focus { border-color: var(--navy); }
+
+.search-wrap { position:relative; flex:1; min-width:220px; max-width:420px; }
+.search-wrap input { width:100%; padding:10px 40px 10px 14px; border:1.5px solid #dde2ef; border-radius:10px; font-size:14px; font-family:inherit; color:#002169; background:#fff; outline:none; transition:border-color .2s; }
+.search-wrap input:focus { border-color:#1d71b8; }
+.search-wrap .search-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none; font-size:15px; }
+.search-wrap .search-clear { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#aaa; cursor:pointer; font-size:16px; line-height:1; display:none; }
+.search-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1.5px solid #dde2ef; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.1); max-height:280px; overflow-y:auto; z-index:200; display:none; }
+.search-dropdown.open { display:block; }
+.search-option { padding:9px 14px; font-size:13px; cursor:pointer; color:#002169; border-bottom:.5px solid #f0f2f7; }
+.search-option:last-child { border-bottom:none; }
+.search-option:hover, .search-option.active { background:#f0f5ff; }
+.search-option .opt-company { font-size:11px; color:#aaa; margin-left:6px; }
+.search-option .opt-badge { font-size:10px; margin-left:6px; padding:1px 6px; border-radius:8px; }
+.opt-badge.both { background:var(--cream-dark); color:var(--navy); }
+.opt-badge.auto-only { background:#eaf2fb; color:var(--blue); }
+.opt-badge.peer-only { background:#f0f6e2; color:var(--green); }
+
+/* ── Loading / Error / Empty ── */
+.state-msg { max-width:1100px; margin:60px auto; padding:0 24px; text-align:center; }
+.loading-spinner { width:48px; height:48px; border-radius:50%; border:4px solid var(--navy-light); border-top-color:var(--navy); animation:spin .9s linear infinite; margin:0 auto 16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.state-msg p { font-size:15px; color:var(--text-soft); }
+
+/* ── Main ── */
+.main { max-width:1100px; margin:24px auto 80px; padding:0 24px; display:grid; gap:24px; }
+
+.participant-header { background:var(--white); border-radius:16px; padding:22px 26px; box-shadow:var(--shadow); }
+.participant-header h2 { font-family:'Playfair Display',serif; font-size:24px; color:var(--navy); margin-bottom:6px; }
+.participant-sub { font-size:13px; color:var(--text-soft); }
+.status-badges { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+.status-badge { font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; }
+.status-badge.ok { background:#eaf5db; color:#4a7a10; }
+.status-badge.missing { background:#fdecea; color:#c0392b; }
+
+.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+@media(max-width:680px){ .kpi-grid { grid-template-columns:1fr; } }
+.kpi-card { background:var(--white); border-radius:16px; padding:22px 18px; box-shadow:var(--shadow); border-top:4px solid; }
+.kpi-card.resp { border-color: var(--navy); }
+.kpi-card.defi { border-color: var(--navy); }
+.kpi-card.glob { border-color: var(--navy); }
+.kpi-label { font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--text-soft); margin-bottom:12px; text-align:center; }
+.kpi-row { display:flex; align-items:center; justify-content:center; gap:14px; }
+.kpi-block { flex:1; text-align:center; }
+.kpi-num { font-family:'Playfair Display',serif; font-size:32px; font-weight:900; line-height:1; }
+.kpi-block.auto .kpi-num { color: var(--blue); }
+.kpi-block.peer .kpi-num { color: var(--green); }
+.kpi-sub { font-size:10px; color:var(--text-soft); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; }
+.kpi-vs { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.kpi-vs-line { width:1px; height:30px; background:var(--cream-dark); }
+.kpi-vs-label { font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--text-soft); font-weight:700; }
+
+.chart-card { background:var(--white); border-radius:16px; padding:24px; box-shadow:var(--shadow); }
+.card-title { font-size:13px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; color:var(--navy); }
+.card-title-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.legend-row { display:flex; justify-content:center; gap:24px; margin:-8px 0 16px; font-size:12px; color:var(--text-soft); }
+.legend-item { display:flex; align-items:center; gap:6px; }
+.legend-dot { width:10px; height:10px; border-radius:50%; }
+
+.dual-bar-rows { display:flex; flex-direction:column; gap:14px; }
+.dual-bar-row .dbr-label { font-size:12.5px; color:var(--text); margin-bottom:6px; }
+.dbr-line { display:flex; align-items:center; gap:8px; margin-bottom:3px; }
+.dbr-tag { font-size:9px; font-weight:700; width:34px; flex-shrink:0; text-transform:uppercase; }
+.dbr-tag.auto { color:var(--blue); }
+.dbr-tag.peer { color:var(--green); }
+.dbr-track { flex:1; height:7px; background:var(--cream-dark); border-radius:4px; overflow:hidden; }
+.dbr-fill { height:100%; border-radius:4px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+.dbr-fill.auto { background:var(--blue); }
+.dbr-fill.peer { background:var(--green); }
+.dbr-val { font-size:11px; font-weight:700; width:28px; text-align:right; flex-shrink:0; }
+.dbr-val.auto { color:var(--blue); }
+.dbr-val.peer { color:var(--green); }
+
+.footer { max-width:1100px; margin:0 auto; padding:16px 24px 40px; text-align:center; font-size:11px; color:#aaa; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Indice de gestion <span>360</span></div>
+      <div class="header-sub">Comparatif auto-évaluation / évaluation par les pairs — accès Stem Experts</div>
+    </div>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <label for="pharmacieFilter">🏪 Pharmacie :</label>
+  <select id="pharmacieFilter" onchange="onPharmacieChange()">
+    <option value="all">Toutes les pharmacies</option>
+  </select>
+
+  <div class="search-wrap" id="searchWrap">
+    <input type="text" id="searchInput" placeholder="Rechercher un participant…" autocomplete="off"
+      oninput="filterDropdown()" onfocus="openDropdown()" onkeydown="keyNav(event)">
+    <span class="search-icon" id="searchIcon">🔍</span>
+    <span class="search-clear" id="searchClear" onclick="clearSearch()">✕</span>
+    <div class="search-dropdown" id="searchDropdown"></div>
+  </div>
+</div>
+
+<div id="loadingState" class="state-msg">
+  <div class="loading-spinner"></div>
+  <p>Chargement des données…</p>
+</div>
+
+<div id="errorState" class="state-msg" style="display:none;">
+  <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:8px;">⚠️ Erreur de chargement</p>
+  <p>Impossible de récupérer les fichiers Zoho automatiquement. Vérifiez votre connexion et rafraîchissez la page.</p>
+</div>
+
+<div id="emptyState" class="state-msg" style="display:none;">
+  <p>Sélectionnez une pharmacie et/ou recherchez un participant ci-dessus pour afficher son comparatif.</p>
+</div>
+
+<div class="main" id="dashboard" style="display:none;">
+
+  <div class="participant-header">
+    <h2 id="pName">—</h2>
+    <div class="participant-sub" id="pSub"></div>
+    <div class="status-badges" id="statusBadges"></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card resp">
+      <div class="kpi-label">Responsabilités</div>
+      <div class="kpi-row">
+        <div class="kpi-block auto"><div class="kpi-num" id="kpiRespAuto">—</div><div class="kpi-sub">Auto-éval.</div></div>
+        <div class="kpi-vs"><div class="kpi-vs-line"></div><div class="kpi-vs-label">vs</div><div class="kpi-vs-line"></div></div>
+        <div class="kpi-block peer"><div class="kpi-num" id="kpiRespPeer">—</div><div class="kpi-sub" id="kpiRespPeerLabel">Pairs</div></div>
+      </div>
+    </div>
+    <div class="kpi-card defi">
+      <div class="kpi-label">Défis</div>
+      <div class="kpi-row">
+        <div class="kpi-block auto"><div class="kpi-num" id="kpiDefiAuto">—</div><div class="kpi-sub">Auto-éval.</div></div>
+        <div class="kpi-vs"><div class="kpi-vs-line"></div><div class="kpi-vs-label">vs</div><div class="kpi-vs-line"></div></div>
+        <div class="kpi-block peer"><div class="kpi-num" id="kpiDefiPeer">—</div><div class="kpi-sub" id="kpiDefiPeerLabel">Pairs</div></div>
+      </div>
+    </div>
+    <div class="kpi-card glob">
+      <div class="kpi-label">Global</div>
+      <div class="kpi-row">
+        <div class="kpi-block auto"><div class="kpi-num" id="kpiGlobAuto">—</div><div class="kpi-sub">Auto-éval.</div></div>
+        <div class="kpi-vs"><div class="kpi-vs-line"></div><div class="kpi-vs-label">vs</div><div class="kpi-vs-line"></div></div>
+        <div class="kpi-block peer"><div class="kpi-num" id="kpiGlobPeer">—</div><div class="kpi-sub" id="kpiGlobPeerLabel">Pairs</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble — 10 questions</div>
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluation</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Évaluation par les pairs (moyenne)</div>
+    </div>
+    <canvas id="radarChart" style="max-height:420px;"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités — détail par question</div>
+    <div class="dual-bar-rows" id="barsResp"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis — détail par question</div>
+    <div class="dual-bar-rows" id="barsDefi"></div>
+  </div>
+
+</div>
+
+<div class="footer">Indice de gestion 360 — Stem Experts</div>
+
+<script>
+// ── CONFIGURATION ──
+const BASE_URL_AUTO = 'https://sheet.zohopublic.com/sheet/published/mniqh133e40eddf1846ec8b4cd9c0316e5890?download=csv&sheetname=Feuille1';
+const BASE_URL_PEER = 'https://sheet.zohopublic.com/sheet/published/mniqh07f27ed4af3e44efb76fca5dda541087?download=csv&sheetname=Feuille1';
+
+const PROXIES = [
+  url => 'https://api.allorigins.win/raw?url='       + encodeURIComponent(url),
+  url => 'https://corsproxy.io/?url='                + encodeURIComponent(url),
+  url => 'https://api.codetabs.com/v1/proxy?quest='  + encodeURIComponent(url),
+  url => 'https://thingproxy.freeboard.io/fetch/'    + url,
+  url => 'https://jsonp.afeld.me/?url='              + encodeURIComponent(url),
+];
+
+const COL_AUTO = {
+  prenom:0, nom:1, email:2, tel:3, pharmacie:4, dateAtelier:5, dept:6, poste:7,
+  resp:[9,12,15,18,21], defi:[24,27,30,33,36],
+};
+const COL_PEER = {
+  prenom:0, nom:1, email:2, tel:3, pharmacie:4, prenomCible:5, nomCible:6, dateAtelier:7, dept:8, poste:9,
+  resp:[11,14,17,20,23], defi:[26,29,32,35,38],
+};
+
+const RESP_LABELS = [
+  "Définir les gains à atteindre",
+  "Organiser le travail pour garantir l'atteinte des gains",
+  "Communiquer ses attentes / mobiliser",
+  "Mesurer au fur et à mesure",
+  "Développer son personnel",
+];
+const DEFI_LABELS = [
+  "Exercer son leadership",
+  "Maintenir une organisation optimale",
+  "Maîtriser la communication",
+  "Implanter et maintenir le travail d'équipe",
+  "Implanter et maintenir une gestion rigoureuse",
+];
+
+let autoRows = [], peerRows = [];
+let masterList = [];
+let radarChartInst = null;
+
+// ── UTILITAIRES ──
+function normalizeName(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+function num(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
+
+function avg(arr) {
+  const valid = arr.filter(v => v !== null && v > 0);
+  return valid.length ? valid.reduce((a,b) => a+b, 0) / valid.length : null;
+}
+
+function geoMean(vals) {
+  const valid = vals.filter(v => v !== null && v > 0);
+  if (!valid.length) return null;
+  const n = valid.length;
+  let prod = 1;
+  for (const v of valid) prod *= (v / 10);
+  let y = 1;
+  for (let i = 0; i < 40; i++) {
+    let yp = 1;
+    for (let j = 0; j < n - 1; j++) yp *= y;
+    y = ((n - 1) * y + prod / yp) / n;
+  }
+  return Math.round(y * 1000) / 10;
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') inQ = false;
+        else cur += c;
+      } else {
+        if (c === '"') inQ = true;
+        else if (c === ',') { cols.push(cur.trim()); cur = ''; }
+        else cur += c;
+      }
+    }
+    cols.push(cur.trim());
+    return cols;
+  });
+}
+
+function rowHasValidScores(row, colDef) {
+  const idxs = [...colDef.resp, ...colDef.defi];
+  return idxs.every(i => row[i] !== undefined && row[i] !== '' && !isNaN(parseFloat(row[i])));
+}
+
+async function fetchViaProxies(baseUrl) {
+  const urlWithBust = baseUrl + '&_t=' + Date.now();
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy(urlWithBust), { cache: 'no-store' });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text && text.length > 50) return text;
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+function extractScores(row, colDef) {
+  return { resp: colDef.resp.map(i => num(row[i])), defi: colDef.defi.map(i => num(row[i])) };
+}
+function averageArrays(arraysList) {
+  const len = arraysList[0].length, out = [];
+  for (let i = 0; i < len; i++) out.push(avg(arraysList.map(a => a[i])));
+  return out;
+}
+
+// ── CHARGEMENT ──
+async function loadData() {
+  const [autoText, peerText] = await Promise.all([
+    fetchViaProxies(BASE_URL_AUTO),
+    fetchViaProxies(BASE_URL_PEER),
+  ]);
+  if (!autoText || !peerText) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    return;
+  }
+  autoRows = parseCSV(autoText).filter(r => rowHasValidScores(r, COL_AUTO));
+  peerRows = parseCSV(peerText).filter(r => rowHasValidScores(r, COL_PEER));
+
+  buildMasterList();
+  populatePharmacieFilter();
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+// ── LISTE MAÎTRESSE DES PARTICIPANTS (union auto + cibles pairs) ──
+function buildMasterList() {
+  const map = new Map();
+
+  autoRows.forEach(r => {
+    const prenom = r[COL_AUTO.prenom] || '', nom = r[COL_AUTO.nom] || '';
+    const key = normalizeName(prenom + ' ' + nom);
+    if (!key) return;
+    map.set(key, {
+      key, prenom, nom,
+      pharmacie: r[COL_AUTO.pharmacie] || '',
+      poste: r[COL_AUTO.poste] || '',
+      dept: r[COL_AUTO.dept] || '',
+      hasAuto: true, hasPeer: map.has(key) ? map.get(key).hasPeer : false,
+    });
+  });
+
+  peerRows.forEach(r => {
+    const prenom = r[COL_PEER.prenomCible] || '', nom = r[COL_PEER.nomCible] || '';
+    const key = normalizeName(prenom + ' ' + nom);
+    if (!key) return;
+    if (map.has(key)) {
+      map.get(key).hasPeer = true;
+    } else {
+      map.set(key, {
+        key, prenom, nom,
+        pharmacie: r[COL_PEER.pharmacie] || '', // meilleure approximation disponible (pharmacie de l'évaluateur)
+        poste: '', dept: '',
+        hasAuto: false, hasPeer: true,
+      });
+    }
+  });
+
+  masterList = Array.from(map.values()).sort((a,b) => (a.prenom+a.nom).localeCompare(b.prenom+b.nom, 'fr'));
+}
+
+function populatePharmacieFilter() {
+  const sel = document.getElementById('pharmacieFilter');
+  const pharmacies = [...new Set(masterList.map(p => p.pharmacie).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+  sel.innerHTML = '<option value="all">Toutes les pharmacies</option>' +
+    pharmacies.map(p => `<option value="${p.replace(/"/g,'&quot;')}">${p}</option>`).join('');
+}
+
+function onPharmacieChange() {
+  filterDropdown();
+}
+
+// ── RECHERCHE / DROPDOWN ──
+function currentPharmacieFilter() {
+  return document.getElementById('pharmacieFilter').value;
+}
+
+function openDropdown() { filterDropdown(); document.getElementById('searchDropdown').classList.add('open'); }
+
+function filterDropdown() {
+  const input = document.getElementById('searchInput');
+  const q = (input.value || '').toLowerCase().trim();
+  const dd = document.getElementById('searchDropdown');
+  const clear = document.getElementById('searchClear');
+  const icon = document.getElementById('searchIcon');
+  clear.style.display = q ? 'block' : 'none';
+  icon.style.display = q ? 'none' : 'block';
+
+  const pharmacieVal = currentPharmacieFilter();
+  let opts = masterList.filter(p => pharmacieVal === 'all' || p.pharmacie === pharmacieVal);
+  if (q) opts = opts.filter(p => (p.prenom+' '+p.nom).toLowerCase().includes(q) || p.pharmacie.toLowerCase().includes(q));
+
+  dd.innerHTML = '';
+  if (!opts.length) {
+    const noDiv = document.createElement('div');
+    noDiv.className = 'search-option'; noDiv.style.color = '#aaa';
+    noDiv.textContent = 'Aucun résultat';
+    dd.appendChild(noDiv);
+  } else {
+    opts.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'search-option';
+      div.dataset.key = p.key;
+      const badge = (p.hasAuto && p.hasPeer) ? '<span class="opt-badge both">complet</span>'
+                  : p.hasAuto ? '<span class="opt-badge auto-only">auto seulement</span>'
+                  : '<span class="opt-badge peer-only">pairs seulement</span>';
+      div.innerHTML = `${p.prenom} ${p.nom}` + (p.pharmacie ? `<span class="opt-company">— ${p.pharmacie}</span>` : '') + badge;
+      div.addEventListener('mousedown', e => { e.preventDefault(); selectParticipant(p.key); });
+      dd.appendChild(div);
+    });
+  }
+  dd.classList.add('open');
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  filterDropdown();
+}
+
+function keyNav(e) {
+  const dd = document.getElementById('searchDropdown');
+  const items = dd.querySelectorAll('.search-option[data-key]');
+  const active = dd.querySelector('.search-option.active');
+  let idx = -1;
+  items.forEach((el,i) => { if (el===active) idx=i; });
+  if (e.key === 'ArrowDown') { e.preventDefault(); if(active) active.classList.remove('active'); const n=items[Math.min(idx+1,items.length-1)]; if(n) n.classList.add('active'); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); if(active) active.classList.remove('active'); const p=items[Math.max(idx-1,0)]; if(p) p.classList.add('active'); }
+  else if (e.key === 'Enter') { if (active) selectParticipant(active.dataset.key); }
+  else if (e.key === 'Escape') { dd.classList.remove('open'); }
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('searchWrap');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('searchDropdown').classList.remove('open');
+});
+
+// ── AFFICHAGE DU COMPARATIF ──
+function selectParticipant(key) {
+  const person = masterList.find(p => p.key === key);
+  if (!person) return;
+  document.getElementById('searchInput').value = person.prenom + ' ' + person.nom;
+  document.getElementById('searchDropdown').classList.remove('open');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'grid';
+  renderComparatif(person);
+}
+
+function renderComparatif(person) {
+  const autoRow = autoRows.find(r => normalizeName((r[COL_AUTO.prenom]||'')+' '+(r[COL_AUTO.nom]||'')) === person.key);
+  const peerMatches = peerRows.filter(r => normalizeName((r[COL_PEER.prenomCible]||'')+' '+(r[COL_PEER.nomCible]||'')) === person.key);
+
+  document.getElementById('pName').textContent = person.prenom + ' ' + person.nom;
+  const sub = [person.pharmacie, person.poste, person.dept].filter(Boolean).join(' · ');
+  document.getElementById('pSub').textContent = sub;
+
+  const badges = document.getElementById('statusBadges');
+  badges.innerHTML = '';
+  badges.innerHTML += autoRow
+    ? '<span class="status-badge ok">✓ Auto-évaluation soumise</span>'
+    : '<span class="status-badge missing">Auto-évaluation non soumise</span>';
+  badges.innerHTML += peerMatches.length
+    ? `<span class="status-badge ok">✓ ${peerMatches.length} évaluation${peerMatches.length>1?'s':''} par les pairs</span>`
+    : '<span class="status-badge missing">Aucune évaluation par les pairs</span>';
+
+  const autoScores = autoRow ? extractScores(autoRow, COL_AUTO) : null;
+  let peerResp = null, peerDefi = null;
+  if (peerMatches.length) {
+    const allPeerScores = peerMatches.map(r => extractScores(r, COL_PEER));
+    peerResp = averageArrays(allPeerScores.map(s => s.resp));
+    peerDefi = averageArrays(allPeerScores.map(s => s.defi));
+  }
+
+  // KPI cards
+  setKPI('Resp', autoScores ? geoMean(autoScores.resp) : null, peerResp ? geoMean(peerResp) : null, peerMatches.length);
+  setKPI('Defi', autoScores ? geoMean(autoScores.defi) : null, peerDefi ? geoMean(peerDefi) : null, peerMatches.length);
+  const autoGlob = autoScores ? geoMean([...autoScores.resp, ...autoScores.defi]) : null;
+  const peerGlob = (peerResp && peerDefi) ? geoMean([...peerResp, ...peerDefi]) : null;
+  setKPI('Glob', autoGlob, peerGlob, peerMatches.length);
+
+  renderRadar(autoScores, peerResp, peerDefi);
+  renderDualBars('barsResp', RESP_LABELS, autoScores ? autoScores.resp : null, peerResp);
+  renderDualBars('barsDefi', DEFI_LABELS, autoScores ? autoScores.defi : null, peerDefi);
+}
+
+function setKPI(prefix, autoVal, peerVal, peerCount) {
+  document.getElementById('kpi'+prefix+'Auto').textContent = autoVal !== null ? autoVal + '%' : '—';
+  document.getElementById('kpi'+prefix+'Peer').textContent = peerVal !== null ? peerVal + '%' : '—';
+  const lbl = document.getElementById('kpi'+prefix+'PeerLabel');
+  if (lbl) lbl.textContent = peerCount ? `Pairs (n=${peerCount})` : 'Pairs';
+}
+
+function renderDualBars(containerId, labels, autoVals, peerVals) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = labels.map((label, i) => {
+    const a = autoVals ? autoVals[i] : null;
+    const p = peerVals ? peerVals[i] : null;
+    const aPct = a !== null && a !== undefined ? (a/10*100) : 0;
+    const pPct = p !== null && p !== undefined ? (p/10*100) : 0;
+    return `<div class="dual-bar-row">
+      <div class="dbr-label">${label}</div>
+      <div class="dbr-line">
+        <span class="dbr-tag auto">Auto</span>
+        <div class="dbr-track"><div class="dbr-fill auto" style="width:${aPct}%"></div></div>
+        <span class="dbr-val auto">${a !== null && a !== undefined ? a.toFixed(1) : '—'}</span>
+      </div>
+      <div class="dbr-line">
+        <span class="dbr-tag peer">Pairs</span>
+        <div class="dbr-track"><div class="dbr-fill peer" style="width:${pPct}%"></div></div>
+        <span class="dbr-val peer">${p !== null && p !== undefined ? p.toFixed(1) : '—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderRadar(autoScores, peerResp, peerDefi) {
+  const labels = [...RESP_LABELS, ...DEFI_LABELS];
+  const datasets = [];
+  if (autoScores) {
+    datasets.push({
+      label: 'Auto-évaluation',
+      data: [...autoScores.resp, ...autoScores.defi],
+      borderColor: '#1d71b8', backgroundColor: 'rgba(29,113,184,0.15)', pointBackgroundColor: '#1d71b8',
+    });
+  }
+  if (peerResp && peerDefi) {
+    datasets.push({
+      label: 'Évaluation par les pairs',
+      data: [...peerResp, ...peerDefi],
+      borderColor: '#95c11f', backgroundColor: 'rgba(149,193,31,0.15)', pointBackgroundColor: '#95c11f',
+    });
+  }
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  if (radarChartInst) radarChartInst.destroy();
+  radarChartInst = new Chart(ctx, {
+    type: 'radar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      scales: { r: { min:0, max:10, ticks:{ stepSize:2 }, pointLabels:{ font:{ size:10 } } } },
+      plugins: { legend: { display:false } },
+    },
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>

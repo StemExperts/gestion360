@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vos Résultats d'Auto-Évaluation</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+    --ink:         #002169;
+    --ink-soft:    #1d71b8;
+    --cream:       #f5f7fa;
+    --cream-dark:  #e8ecf2;
+    --gold:        #ffed00;
+    --gold-light:  #fff176;
+    --gold-bg:     #fffde7;
+    --blue:        #1d71b8;
+    --blue-light:  #d0e4f5;
+    --green:       #95c11f;
+    --green-light: #e8f5c0;
+    --warn:        #0090ac;
+    --warn-light:  #d0eef3;
+    --white:       #ffffff;
+    --shadow:      0 4px 28px rgba(0,33,105,0.10);
+    --shadow-lg:   0 10px 48px rgba(0,33,105,0.18);
+}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; top: -180px; right: -180px;
+    width: 520px; height: 520px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.09) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .page {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    position: relative; z-index: 1;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 44px;
+    animation: fadeUp .65s ease both;
+  }
+  .eyebrow {
+    font-size: 10px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold); font-weight: 600; margin-bottom: 12px;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(21px,4vw,34px); font-weight: 700;
+    line-height: 1.2; margin-bottom: 10px;
+  }
+  .participant-line {
+    font-size: 21px; color: var(--ink-soft);
+  }
+  .participant-line strong { color: var(--blue); font-weight: 600; }
+  .divider {
+    width: 52px; height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    margin: 18px auto 0; border-radius: 2px;
+  }
+
+  /* ── Score cards ─────────────────────────────────────────── */
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px; margin-bottom: 20px;
+    animation: fadeUp .65s .12s ease both;
+  }
+  @media(max-width:580px){ .score-row { grid-template-columns: 1fr; } }
+
+  .score-card {
+    background: var(--white);
+    border-radius: 14px; padding: 26px 18px 22px;
+    box-shadow: var(--shadow); text-align: center;
+    position: relative; overflow: hidden;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .score-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .score-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+  }
+  .score-card.resp::before  { background: linear-gradient(90deg,var(--blue),#4a90b8); }
+  .score-card.defi::before  { background: linear-gradient(90deg,var(--gold),var(--gold-light)); }
+  .score-card.total::before { background: linear-gradient(90deg,var(--green),#5aad87); }
+
+  .score-label {
+    font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-soft); margin-bottom: 8px;
+  }
+  .score-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 2px;
+  }
+  .score-card.resp  .score-value { color: var(--blue); }
+  .score-card.defi  .score-value { color: var(--gold); }
+  .score-card.total .score-value { color: var(--green); }
+
+  .score-denom { font-size: 11px; color: var(--ink-soft); margin-bottom: 8px; }
+
+  .score-pct {
+    display: inline-block; font-size: 12px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    background: #f0f2f7; color: var(--ink-soft);
+  }
+
+  /* ── Geo mean card ───────────────────────────────────────── */
+  .geo-card {
+    background: var(--ink);
+    border-radius: 14px; padding: 28px 24px;
+    box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 24px;
+    margin-bottom: 20px;
+    animation: fadeUp .65s .22s ease both;
+  }
+  @media(max-width:560px){ .geo-card { flex-direction: column; text-align: center; } }
+
+  .geo-icon {
+    flex-shrink: 0; width: 58px; height: 58px; border-radius: 50%;
+    background: rgba(201,168,76,.14);
+    border: 1.5px solid rgba(201,168,76,.35);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  .geo-text h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px; color: var(--cream); margin-bottom: 5px;
+  }
+  .geo-text p {
+    font-size: 12px; color: rgba(248,245,240,.48);
+    line-height: 1.55; max-width: 400px;
+  }
+  .geo-scores { margin-left: auto; flex-shrink: 0; display: flex; gap: 24px; }
+  @media(max-width:560px){ .geo-scores { margin-left: 0; } }
+
+  .geo-score-block { text-align: center; }
+  .geo-score-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 34px; font-weight: 700; color: var(--gold-light); line-height: 1;
+  }
+  .geo-score-lbl {
+    font-size: 9px; letter-spacing: .13em; text-transform: uppercase;
+    color: rgba(248,245,240,.4); margin-top: 4px;
+  }
+  .geo-divider {
+    width: 1px; background: rgba(255,255,255,.1); align-self: stretch;
+  }
+
+  /* ── Charts card ─────────────────────────────────────────── */
+  .chart-card {
+    background: var(--white); border-radius: 14px;
+    padding: 28px 24px; box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    animation: fadeUp .65s .32s ease both;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif; font-size: 19px; margin-bottom: 4px;
+  }
+  .card-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 24px; }
+
+  .chart-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; }
+  @media(max-width:600px){ .chart-grid { grid-template-columns: 1fr; } }
+  .donut-stack { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+  .donut-block-lbl {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-soft); text-align: center; margin-top: 4px;
+  }
+
+  .chart-lbl {
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    font-weight: 600; color: var(--ink-soft); text-align: center; margin-bottom: 10px;
+  }
+
+  .donut-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .donut-rel { position: relative; width: 150px; height: 150px; }
+  .donut-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%); text-align: center; pointer-events: none;
+  }
+  .donut-center .big {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; font-weight: 700; display: block; line-height: 1;
+  }
+  .donut-center .sm { font-size: 11px; color: var(--ink-soft); }
+
+  /* ── Breakdown card ──────────────────────────────────────── */
+  .breakdown-card {
+    background: var(--white); border-radius: 14px;
+    padding: 28px 24px; box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    animation: fadeUp .65s .42s ease both;
+  }
+  .breakdown-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media(max-width:560px){ .breakdown-cols { grid-template-columns: 1fr; } }
+
+  .section-hdr {
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    font-weight: 700; padding-bottom: 8px; margin-bottom: 14px;
+    border-bottom: 2px solid;
+  }
+  .sec-resp .section-hdr { color: var(--blue);  border-color: var(--blue);  }
+  .sec-defi .section-hdr { color: #a07c20;      border-color: var(--gold);  }
+
+  .bar-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .bar-qnum { font-size: 10px; color: var(--ink-soft); width: 20px; flex-shrink: 0; }
+  .bar-qname { font-size: 11px; color: var(--ink); flex: 1; line-height: 1.3; }
+  .bar-track {
+    width: 80px; flex-shrink: 0;
+    height: 7px; background: var(--cream-dark); border-radius: 4px; overflow: hidden;
+  }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1.1s cubic-bezier(.16,1,.3,1); }
+  .bar-score {
+    font-size: 12px; font-weight: 600; width: 22px;
+    flex-shrink: 0; text-align: right;
+  }
+  .bar-row.low .bar-score { color: var(--warn); }
+  .bar-row.low .bar-fill  { background: var(--warn) !important; }
+
+  .footer-note {
+    text-align: center; font-size: 11px; color: var(--ink-soft);
+    opacity: .55; animation: fadeUp .65s .52s ease both;
+  }
+
+  /* ── Radars ── */
+  .radars-wrap {
+    display: flex; flex-direction: column; gap: 0;
+    margin: 32px 0;
+  }
+  .radar-card {
+    background: var(--white); border-radius: 16px;
+    padding: 24px 20px; box-shadow: 0 4px 20px rgba(0,33,105,0.08);
+  }
+  .radar-card-title {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .radar-card-title-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .zone-legend {
+    display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  .zone-dot { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #888; }
+  .zone-dot span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+  /* ── Error state ─────────────────────────────────────────── */
+  .error-state { text-align: center; padding: 80px 20px; }
+  .error-state h2 {
+    font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 10px;
+  }
+  .error-state p { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div id="errorState" class="error-state" style="display:none;">
+    <h2>Aucun résultat à afficher</h2>
+    <p>Cette page s'affiche après la soumission du questionnaire d'évaluation d'un gestionnaire par un autre gestionnaire.<br>
+       Veuillez compléter le sondage pour accéder à vos résultats.</p>
+  </div>
+
+  <div id="content" style="display:none;">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="eyebrow">Résultats · Évaluation par un pair gestionnaire</div>
+      <h1 id="mainTitle">Évaluation d'un gestionnaire</h1>
+      <p class="participant-line" id="participantLine"></p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Score cards -->
+    <div class="score-row">
+      <div class="score-card resp">
+        <div class="score-label">Responsabilités</div>
+        <div class="score-value" id="respPct">–</div>
+        <div class="score-denom">moy. géométrique</div>
+        <div class="score-pct"  id="respScore">–</div>
+      </div>
+      <div class="score-card defi">
+        <div class="score-label">Défis</div>
+        <div class="score-value" id="defiPct">–</div>
+        <div class="score-denom">moy. géométrique</div>
+        <div class="score-pct"  id="defiScore">–</div>
+      </div>
+      <div class="score-card total">
+        <div class="score-label">Score global</div>
+        <div class="score-value" id="totalPct">–</div>
+        <div class="score-denom">moy. géométrique</div>
+        <div class="score-pct"  id="totalScore">–</div>
+      </div>
+    </div>
+
+    <!-- Geometric mean -->
+    <div class="geo-card">
+      <div class="geo-icon">⬡</div>
+      <div class="geo-text">
+        <h3>Moyenne géométrique</h3>
+        <p>Contrairement à la moyenne arithmétique, la moyenne géométrique amplifie l'impact de vos scores les plus bas. Elle vous maintient responsable même lorsque la majorité de vos réponses sont élevées.</p>
+      </div>
+      <div class="geo-scores">
+        <div class="geo-score-block">
+          <div class="geo-score-num" id="geoResp">–</div>
+          <div class="geo-score-lbl">Responsabilités %</div>
+        </div>
+        <div class="geo-divider"></div>
+        <div class="geo-score-block">
+          <div class="geo-score-num" id="geoDefi">–</div>
+          <div class="geo-score-lbl">Défis %</div>
+        </div>
+        <div class="geo-divider"></div>
+        <div class="geo-score-block">
+          <div class="geo-score-num" id="geoTotal">–</div>
+          <div class="geo-score-lbl">Global %</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="chart-card">
+      <h2 class="card-title">Scores</h2>
+      <p class="card-sub">Comparaison de vos scores par section, avec la moyenne géométrique.</p>
+      <div class="chart-grid">
+        <div>
+          <div class="chart-lbl">Scores par section</div>
+          <canvas id="barChart"></canvas>
+
+        </div>
+        <div>
+          <div class="donut-stack">
+            <div>
+              <div class="chart-lbl">Score global</div>
+              <div class="donut-wrap">
+                <div class="donut-rel">
+                  <canvas id="donutGeoChart" width="150" height="150"></canvas>
+                  <div class="donut-center">
+                    <span class="big" id="donutGeoNum" style="color:var(--warn)">–</span>
+                    <span class="sm">%</span>
+                  </div>
+                </div>
+                <div class="donut-block-lbl" style="color:var(--warn)">Géométrique</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-question breakdown -->
+    <div class="breakdown-card">
+      <h2 class="card-title">Détail par question</h2>
+      <p class="card-sub">Les scores de 5 ou moins sont surlignés en orange.</p>
+      <div class="breakdown-cols">
+        <div class="sec-resp">
+          <div class="section-hdr">Responsabilités</div>
+          <div id="respBars"></div>
+        </div>
+        <div class="sec-defi">
+          <div class="section-hdr">Défis</div>
+          <div id="defiBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radars -->
+    <div class="radars-wrap">
+
+      <!-- Radar unique Responsabilités + Défis -->
+      <div class="radar-card">
+        <div class="radar-card-title">
+          <span class="radar-card-title-dot" style="background:var(--blue);"></span>
+          <span style="color:var(--ink);">Profil radar - 10 compétences</span>
+        </div>
+        <canvas id="radarUnique" style="max-height:560px;width:100%;"></canvas>
+        <div class="zone-legend" style="justify-content:center;gap:20px;margin-top:16px;">
+          <div class="zone-dot"><span style="background:rgba(29,113,184,1);border-radius:50%;"></span> Responsabilités</div>
+          <div class="zone-dot"><span style="background:rgba(149,193,31,1);border-radius:50%;"></span> Défis</div>
+          <div class="zone-dot"><span style="width:18px;height:3px;border-radius:0;border-top:2px dashed rgba(226,75,74,0.8);background:none;display:inline-block;"></span> Score recalibré (−20%)</div>
+          <div style="width:1px;height:14px;background:#ddd;"></div>
+          <div class="zone-dot"><span style="background:#95c11f;"></span> Élevé (8-10)</div>
+          <div class="zone-dot"><span style="background:#ffed00;"></span> Moyen (5-7)</div>
+          <div class="zone-dot"><span style="background:#e53e3e;"></span> Faible (0-4)</div>
+        </div>
+        <div id="radarZoneBadge" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--cream-dark);display:flex;justify-content:center;"></div>
+
+        <!-- Guide d'interprétation -->
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--cream-dark);">
+          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:14px;color:var(--ink);">Guide d'Interprétation</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+            <div style="background:#fde8e8;color:#8b1a1a;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+              <strong style="display:block;font-size:13px;margin-bottom:6px;">🔴 Gestion en difficulté<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">0 % – 44 %</span></strong>
+              La gestion ne permet pas d'assurer les résultats attendus. Les actions sont majoritairement réactives, peu structurées et inconsistantes, entraînant des écarts fréquents entre les objectifs et les résultats.
+              <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+              <ul style="margin-left:14px;margin-top:4px;">
+                <li>Perte de contrôle des opérations</li>
+                <li>Climat de travail instable</li>
+                <li>Performance faible ou imprévisible</li>
+              </ul>
+            </div>
+            <div style="background:#ffe8cc;color:#8b3a00;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+              <strong style="display:block;font-size:13px;margin-bottom:6px;">🟠 Gestion en développement<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">45 % – 74 %</span></strong>
+              Certaines pratiques de gestion sont présentes, mais elles ne sont pas encore maîtrisées ni appliquées de façon constante. Les résultats sont variables et dépendent souvent des efforts individuels.
+              <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+              <ul style="margin-left:14px;margin-top:4px;">
+                <li>Résultats irréguliers</li>
+                <li>Dépendance élevée au gestionnaire</li>
+                <li>Mobilisation variable de l'équipe</li>
+              </ul>
+            </div>
+            <div style="background:#dbeafe;color:#1e3a5f;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+              <strong style="display:block;font-size:13px;margin-bottom:6px;">🔵 Gestion compétente<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">75 % – 89 %</span></strong>
+              La gestion est structurée, cohérente et appliquée de façon constante. Elle permet d'atteindre les résultats attendus de manière prévisible grâce à des pratiques claires et reproductibles.
+              <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+              <ul style="margin-left:14px;margin-top:4px;">
+                <li>Performance stable et prévisible</li>
+                <li>Meilleur contrôle des opérations</li>
+                <li>Réduction des urgences et des imprévus</li>
+              </ul>
+            </div>
+            <div style="background:#e8f5c0;color:#3a5a00;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+              <strong style="display:block;font-size:13px;margin-bottom:6px;">🟢 Gestion accomplie<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">90 % – 100 %</span></strong>
+              La gestion agit comme un levier stratégique de performance. Elle anticipe les besoins, optimise les pratiques et développe l'équipe en continu afin de dépasser les résultats attendus et assurer une croissance durable.
+              <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+              <ul style="margin-left:14px;margin-top:4px;">
+                <li>Performance supérieure et durable</li>
+                <li>Forte mobilisation et engagement de l'équipe</li>
+                <li>Organisation résiliente et évolutive</li>
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark);">
+            <span style="font-size:11px;color:#888;">La classification ne repose pas sur l'intention ou les efforts déployés, mais sur la <strong>constance des pratiques</strong> et leur capacité à produire des résultats prévisibles. Les zones sont déterminées par la <strong>moyenne géométrique</strong>, qui amplifie l'impact des scores les plus bas.</span>
+          </div>
+        </div>
+
+      </div><!-- /radar-card -->
+
+    </div>
+
+    <p class="footer-note">Résultats basés sur vos réponses soumises aujourd'hui. Parlez à votre animateur si vous avez des questions.</p>
+
+  </div><!-- /content -->
+</div><!-- /page -->
+
+<script>
+// ── Question labels ────────────────────────────────────────────────────────
+const RESP_Q = [
+  "Définir les gains à atteindre",
+  "Organiser le travail pour garantir l'atteinte des gains",
+  "Communiquer ses attentes / mobiliser son personnel",
+  "Mesurer au fur et à mesure",
+  "Développer son personnel",
+];
+const DEFI_Q = [
+  "Exercer son leadership",
+  "Maintenir une organisation optimale du travail",
+  "Maîtriser la communication",
+  "Implanter et maintenir une gestion rigoureuse",
+  "Implanter et maintenir le travail d'équipe",
+];
+
+// ── URL param parsing ──────────────────────────────────────────────────────
+function params() {
+  const p = new URLSearchParams(window.location.search);
+  const prenom  = p.get('Prénom')      || p.get('prenom')  || p.get('name')    || '';
+  const nom     = p.get('Nom')         || p.get('nom')      || '';
+  const fullName = [prenom, nom].filter(Boolean).join(' ');
+  return {
+    name:    fullName || p.get('name') || 'Participant',
+    email:   p.get('E-mail')     || p.get('email')   || '',
+    dept:    p.get('Département') || p.get('dept')    || '',
+    pos:     p.get('Poste')      || p.get('pos')      || '',
+    company:      p.get('Pharmacie')    || p.get('Nom de la pharmacie') || p.get('cie') || p.get('company')      || '',
+    evalPrenom:   p.get('prénom_évalué') || p.get('prenom_evalue') || p.get('Prénom (personne à évaluer)') || '',
+    evalNom:      p.get('nom_évalué')    || p.get('nom_evalue')    || p.get('Nom (personne à évaluer)')    || '',
+    date_atelier: p.get('date_atelier') || p.get('dateAtelier')  || '',
+    // Responsabilités: alias order A,D,E,C,B → questions 1,2,3,4,5
+    a: +p.get('a'), // Q1 – Définir les gains
+    d: +p.get('d'), // Q2 – Organiser
+    e: +p.get('e'), // Q3 – Communiquer
+    c: +p.get('c'), // Q4 – Mesurer
+    b: +p.get('b'), // Q5 – Développer
+    // Défis: K,L,M,N,O → questions 1‑5
+    k: +p.get('k'),
+    l: +p.get('l'),
+    m: +p.get('m'),
+    n: +p.get('n'),
+    o: +p.get('o'),
+  };
+}
+
+// ── Geometric mean (matches your existing Newton script) ──────────────────
+function geoMean(vals) {
+  const n = vals.length;
+  let prod = 1;
+  for (const v of vals) prod *= (v / 10);
+  let y = 1;
+  for (let i = 0; i < 40; i++) {
+    let yp = 1;
+    for (let j = 0; j < n - 1; j++) yp *= y;
+    y = ((n - 1) * y + prod / yp) / n;
+  }
+  return Math.round(y * 1000) / 10; // one decimal %
+}
+
+// ── Render bar rows ────────────────────────────────────────────────────────
+function renderBars(containerId, questions, values, fillColor) {
+  const el = document.getElementById(containerId);
+  questions.forEach((q, i) => {
+    const v   = values[i];
+    const low = v <= 5;
+    const pct = (v / 10) * 100;
+    const row = document.createElement('div');
+    row.className = 'bar-row' + (low ? ' low' : '');
+    row.innerHTML = `
+      <div class="bar-qnum">${i + 1}.</div>
+      <div class="bar-qname">${q}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:0%;background:${low ? '' : fillColor};"
+             data-pct="${pct}"></div>
+      </div>
+      <div class="bar-score">${v}</div>`;
+    el.appendChild(row);
+  });
+  setTimeout(() => {
+    el.querySelectorAll('.bar-fill').forEach(b => {
+      b.style.width = b.dataset.pct + '%';
+    });
+  }, 80);
+}
+
+// ── Main ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const p = params();
+
+  // NOTE: alias mapping (A→Q1, D→Q2, E→Q3, C→Q4, B→Q5)
+  const respVals = [p.a, p.d, p.e, p.c, p.b];
+  const defiVals = [p.k, p.l, p.m, p.n, p.o];
+  const allVals  = [...respVals, ...defiVals];
+
+  const valid = allVals.every(v => !isNaN(v) && v >= 1 && v <= 10);
+  if (!valid) {
+    document.getElementById('errorState').style.display = 'block';
+    return;
+  }
+  document.getElementById('content').style.display = 'block';
+
+  // Titre : personne évaluée mise à l'avant-plan
+  const evalName = [p.evalPrenom, p.evalNom].filter(Boolean).join(' ');
+  document.getElementById('mainTitle').textContent = evalName
+    ? `Évaluation de ${evalName}`
+    : "Évaluation d'un gestionnaire";
+
+  // Participant line : l'évaluateur devient l'information de contexte
+  const pl = document.getElementById('participantLine');
+  const namePart  = p.name         ? `Évalué par <strong>${p.name}</strong>` : 'Évaluateur non identifié';
+  const posPart   = p.pos          ? ` · ${p.pos}`                : '';
+  const orgPart   = p.company      ? ` · ${p.company}`            : '';
+  const datePart  = p.date_atelier ? ` · ${p.date_atelier}` : '';
+  pl.innerHTML = `${namePart}${posPart}${orgPart}${datePart}`;
+
+  // Scores
+  const respSum = respVals.reduce((a, b) => a + b, 0);
+  const defiSum = defiVals.reduce((a, b) => a + b, 0);
+  const total   = respSum + defiSum;
+  const respPct = Math.round(respSum / 50 * 100);
+  const defiPct = Math.round(defiSum / 50 * 100);
+  const totPct  = Math.round(total   / 100 * 100);
+
+  const geoR = geoMean(respVals);
+  const geoD = geoMean(defiVals);
+  const geoG = geoMean(allVals);
+
+  document.getElementById('respPct').textContent   = geoR + ' %';
+  document.getElementById('defiPct').textContent   = geoD + ' %';
+  document.getElementById('totalPct').textContent  = geoG + ' %';
+  document.getElementById('respScore').textContent = respSum + ' / 50';
+  document.getElementById('defiScore').textContent = defiSum + ' / 50';
+  document.getElementById('totalScore').textContent = total + ' / 100';
+  document.getElementById('geoResp').textContent    = geoR + ' %';
+  document.getElementById('geoDefi').textContent    = geoD + ' %';
+  document.getElementById('geoTotal').textContent   = geoG + ' %';
+
+  // Bars
+  renderBars('respBars', RESP_Q, respVals, 'var(--blue)');
+  renderBars('defiBars', DEFI_Q, defiVals, 'var(--gold)');
+
+  // Bar chart — grouped (Arith. plein / Géom. transparent) par section
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Responsabilités', 'Défis', 'Global'],
+      datasets: [
+        {
+          label: 'Géométrique',
+          data: [geoR, geoD, geoG],
+          backgroundColor: ['rgba(29,113,184,0.88)', 'rgba(149,193,31,0.88)', 'rgba(0,144,172,0.88)'],
+          borderRadius: 5,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } },
+        datalabels: false,
+      },
+      scales: {
+        y: {
+          min: 0, max: 115,
+          ticks: { callback: v => v <= 100 ? v + '%' : '', font: { family: 'DM Sans', size: 10 }, color: '#3d3d5c' },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          ticks: { font: { family: 'DM Sans', size: 10 }, color: '#3d3d5c' },
+          grid: { display: false }
+        }
+      },
+      animation: {
+        onComplete: function() {
+          const chart = this;
+          const ctx = chart.ctx;
+          ctx.font = 'bold 10px DM Sans';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          chart.data.datasets.forEach((dataset, di) => {
+            const meta = chart.getDatasetMeta(di);
+            meta.data.forEach((bar, i) => {
+              const val = dataset.data[i];
+              if (val == null) return;
+              ctx.fillStyle = '#002169';
+              ctx.fillText(val + '%', bar.x, bar.y - 4);
+            });
+          });
+        }
+      }
+    }
+  });
+
+
+
+  // Donut géométrique
+  document.getElementById('donutGeoNum').textContent = geoG;
+  const dGeoCtx = document.getElementById('donutGeoChart').getContext('2d');
+  new Chart(dGeoCtx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [geoG, 100 - geoG],
+        backgroundColor: ['rgba(0,144,172,0.88)', 'rgba(232,236,242,0.7)'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: false, cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      animation: { animateRotate: true, duration: 1400, easing: 'easeOutQuart' }
+    }
+  });
+
+  // ── Radars ────────────────────────────────────────────────────────────────
+  const radarZonePlugin = {
+    id: 'radarZones',
+    beforeDraw(chart) {
+      const { ctx, scales } = chart;
+      const scale = scales.r;
+      if (!scale) return;
+      const center = { x: scale.xCenter, y: scale.yCenter };
+      const getR = val => scale.getDistanceFromCenterForValue(val);
+      const zones = [
+        { max: 10, color: 'rgba(149,193,31,0.34)' },
+        { max: 7,  color: 'rgba(255,235,7,0.38)'  },
+        { max: 4,  color: 'rgba(220,38,38,0.40)'  },
+      ];
+      zones.forEach(z => {
+        const r = getR(z.max);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = z.color;
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+  };
+
+  function makeRadar(canvasId, labels, data, color) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    new Chart(ctx, {
+      type: 'radar',
+      plugins: [radarZonePlugin],
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: color.replace('1)', '0.18)'),
+          borderColor: color,
+          borderWidth: 2.5,
+          pointBackgroundColor: color,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          r: {
+            min: 0, max: 10,
+            ticks: { stepSize: 2, font: { size: 9 }, color: '#aaa', backdropColor: 'transparent' },
+            pointLabels: { font: { size: 11, family: "'DM Sans', sans-serif" }, color: '#002169', padding: 20 },
+            grid: { color: 'rgba(0,33,105,0.08)' },
+            angleLines: { color: 'rgba(0,33,105,0.1)' },
+          }
+        },
+        layout: { padding: { top: 10, bottom: 10, left: 20, right: 20 } },
+      plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + ' / 10' } }
+        },
+        animation: { duration: 1000 }
+      }
+    });
+  }
+
+  const ALL_LABELS = [
+    ['Définir', 'les gains'],
+    ['Organiser', 'le travail'],
+    ['Communiquer /','Mobiliser'],
+    ['Mesurer', 'au fur et à mesure'],
+    ['Développer', 'son personnel'],
+    ['Exercer son', 'leadership'],
+    ['Organisation', 'optimale'],
+    ['Maîtriser la', 'communication'],
+    ['Gestion', 'rigoureuse'],
+    ["Travail", "d'équipe"]
+  ];
+
+  // Scores géométriques par question (valeur brute /10, substituant 0 → 0.1)
+  function geoScore(v) { return v === 0 ? 0.1 : v; }
+  const geoRespVals = respVals.map(geoScore);
+  const geoDefiVals = defiVals.map(geoScore);
+  // Moyenne géo individuelle par question = la valeur elle-même (1 seule obs.)
+  // Pour le radar on utilise les valeurs brutes géométriques normalisées par section
+  const geoRMean = Math.pow(geoRespVals.reduce((a,b)=>a*b,1), 1/5);
+  const geoDMean = Math.pow(geoDefiVals.reduce((a,b)=>a*b,1), 1/5);
+  // Facteur d'échelle : ramener chaque dimension sur 10 via ratio géo/arith
+  const scaleR = respVals.reduce((a,b)=>a+b,0)/5 > 0 ? geoRMean / (respVals.reduce((a,b)=>a+b,0)/5) : 1;
+  const scaleD = defiVals.reduce((a,b)=>a+b,0)/5 > 0 ? geoDMean / (defiVals.reduce((a,b)=>a+b,0)/5) : 1;
+  const radarDataGeo = [
+    ...respVals.map(v => Math.round(v * scaleR * 10) / 10),
+    ...defiVals.map(v => Math.round(v * scaleD * 10) / 10)
+  ];
+
+  const pointColors = [
+    ...Array(5).fill('rgba(29,113,184,1)'),
+    ...Array(5).fill('rgba(149,193,31,1)')
+  ];
+
+  const ctx10 = document.getElementById('radarUnique').getContext('2d');
+  new Chart(ctx10, {
+    type: 'radar',
+    plugins: [radarZonePlugin],
+    data: {
+      labels: ALL_LABELS,
+      datasets: [
+        {
+          label: 'Compétences (géo.)',
+          data: radarDataGeo,
+          backgroundColor: 'rgba(29,113,184,0.12)',
+          borderColor: 'rgba(29,113,184,0.7)',
+          borderWidth: 2.5,
+          pointBackgroundColor: pointColors,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        },
+        {
+          label: 'Score recalibré (−20%)',
+          data: radarDataGeo.map(v => v !== null ? Math.round(v * 0.8 * 10) / 10 : null),
+          backgroundColor: 'rgba(226,75,74,0.07)',
+          borderColor: 'rgba(226,75,74,0.8)',
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointBackgroundColor: 'rgba(226,75,74,1)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          min: 0, max: 10,
+          ticks: { stepSize: 2, font: { size: 9 }, color: '#aaa', backdropColor: 'transparent' },
+          pointLabels: { font: { size: 10, family: "'DM Sans', sans-serif" }, color: '#002169', padding: 20 },
+          grid: { color: 'rgba(0,33,105,0.08)' },
+          angleLines: { color: 'rgba(0,33,105,0.1)' },
+        }
+      },
+      layout: { padding: { top: 10, bottom: 10, left: 24, right: 24 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ' : ' + ctx.raw + ' / 10' } }
+      },
+      animation: { duration: 1000 }
+    }
+  });
+
+  // Badge de zone — basé uniquement sur la moyenne géométrique globale
+  function zoneFromGeoPct(pct) {
+    if (pct >= 90) return { label:'Gestion accomplie',          bg:'#e8f5c0', txt:'#3a7000' };
+    if (pct >= 75) return { label:'Gestion compétente',         bg:'#fff3cd', txt:'#7a4f00' };
+    if (pct >= 45) return { label:'Gestion en développement',   bg:'#ffe8cc', txt:'#8b3a00' };
+    return             { label:'Gestion en difficulté',         bg:'#fde8e8', txt:'#8b0000' };
+  }
+  const zoneGeo = zoneFromGeoPct(geoG);
+  const badgeEl = document.getElementById('radarZoneBadge');
+  if (badgeEl) {
+    badgeEl.innerHTML =
+      '<span style="display:inline-block;background:' + zoneGeo.bg + ';color:' + zoneGeo.txt + ';'
+      + 'font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;'
+      + 'padding:6px 16px;border-radius:20px;">'
+      + zoneGeo.label + ' · ' + geoG + '% (géo.)'
+      + '</span>';
+  }
+
+});
+</script>
+</body>
+</html>

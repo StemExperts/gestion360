@@ -174,6 +174,48 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   <p>Sélectionnez une pharmacie et/ou recherchez un participant ci-dessus pour afficher son comparatif.</p>
 </div>
 
+<div id="pharmacySummary" class="main" style="display:none;">
+  <div class="participant-header">
+    <h2 id="psPharmName">—</h2>
+    <div class="participant-sub" id="psSub">Moyenne des évaluations reçues (sondage "Évaluation des gestionnaires par les gestionnaires")</div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card resp">
+      <div class="kpi-label">Responsabilités</div>
+      <div class="kpi-row" style="justify-content:center;">
+        <div class="kpi-block auto"><div class="kpi-num" id="psKpiResp">—</div><div class="kpi-sub">Moy. géométrique</div></div>
+      </div>
+    </div>
+    <div class="kpi-card defi">
+      <div class="kpi-label">Défis</div>
+      <div class="kpi-row" style="justify-content:center;">
+        <div class="kpi-block auto"><div class="kpi-num" id="psKpiDefi">—</div><div class="kpi-sub">Moy. géométrique</div></div>
+      </div>
+    </div>
+    <div class="kpi-card glob">
+      <div class="kpi-label">Global</div>
+      <div class="kpi-row" style="justify-content:center;">
+        <div class="kpi-block auto"><div class="kpi-num" id="psKpiGlob">—</div><div class="kpi-sub" id="psKpiGlobLabel">Moy. géométrique</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités — moyenne par question (toutes évaluations de la pharmacie)</div>
+    <div class="dual-bar-rows" id="psBarsResp"></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis — moyenne par question (toutes évaluations de la pharmacie)</div>
+    <div class="dual-bar-rows" id="psBarsDefi"></div>
+  </div>
+
+  <div class="chart-card" style="text-align:center;font-size:12px;color:var(--text-soft);">
+    Sélectionnez un participant ci-dessus pour voir son comparatif individuel (auto-évaluation vs pairs).
+  </div>
+</div>
+
 <div class="main" id="dashboard" style="display:none;">
 
   <div class="participant-header">
@@ -272,6 +314,7 @@ const DEFI_LABELS = [
 let autoRows = [], peerRows = [];
 let masterList = [];
 let radarChartInst = null;
+let currentSelectedKey = null;
 
 // ── UTILITAIRES ──
 function normalizeName(s) {
@@ -369,8 +412,9 @@ async function loadData() {
 
   buildMasterList();
   populatePharmacieFilter();
+  currentSelectedKey = null;
   document.getElementById('loadingState').style.display = 'none';
-  document.getElementById('emptyState').style.display = 'block';
+  updateViewState();
 }
 
 function refreshAll() {
@@ -391,9 +435,10 @@ function handleManualUpload() {
     peerRows = parseCSV(peerText).filter(r => rowHasValidScores(r, COL_PEER));
     buildMasterList();
     populatePharmacieFilter();
+    currentSelectedKey = null;
     document.getElementById('errorState').style.display = 'none';
     document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
+    updateViewState();
     statusEl.className = 'emergency-status ok';
     statusEl.textContent = `✓ ${autoRows.length} réponse(s) auto-évaluation et ${peerRows.length} réponse(s) évaluation par les pairs chargées.`;
   }).catch(() => {
@@ -446,7 +491,28 @@ function populatePharmacieFilter() {
 }
 
 function onPharmacieChange() {
+  currentSelectedKey = null;
+  document.getElementById('searchInput').value = '';
   filterDropdown();
+  updateViewState();
+}
+
+function updateViewState() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('pharmacySummary').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+
+  if (currentSelectedKey) {
+    document.getElementById('dashboard').style.display = 'grid';
+    return;
+  }
+  const pharm = currentPharmacieFilter();
+  if (pharm === 'all') {
+    document.getElementById('emptyState').style.display = 'block';
+  } else {
+    document.getElementById('pharmacySummary').style.display = 'grid';
+    renderPharmacySummary(pharm);
+  }
 }
 
 // ── RECHERCHE / DROPDOWN ──
@@ -493,7 +559,9 @@ function filterDropdown() {
 
 function clearSearch() {
   document.getElementById('searchInput').value = '';
+  currentSelectedKey = null;
   filterDropdown();
+  updateViewState();
 }
 
 function keyNav(e) {
@@ -517,9 +585,11 @@ document.addEventListener('click', e => {
 function selectParticipant(key) {
   const person = masterList.find(p => p.key === key);
   if (!person) return;
+  currentSelectedKey = key;
   document.getElementById('searchInput').value = person.prenom + ' ' + person.nom;
   document.getElementById('searchDropdown').classList.remove('open');
   document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('pharmacySummary').style.display = 'none';
   document.getElementById('dashboard').style.display = 'grid';
   renderComparatif(person);
 }
@@ -619,6 +689,50 @@ function renderRadar(autoScores, peerResp, peerDefi) {
       plugins: { legend: { display:false } },
     },
   });
+}
+
+function renderSingleBars(containerId, labels, vals) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = labels.map((label, i) => {
+    const v = vals ? vals[i] : null;
+    const pct = (v !== null && v !== undefined) ? (v/10*100) : 0;
+    return `<div class="dual-bar-row">
+      <div class="dbr-label">${label}</div>
+      <div class="dbr-line">
+        <span class="dbr-tag peer">Pairs</span>
+        <div class="dbr-track"><div class="dbr-fill peer" style="width:${pct}%"></div></div>
+        <span class="dbr-val peer">${v !== null && v !== undefined ? v.toFixed(1) : '—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPharmacySummary(pharmacieName) {
+  document.getElementById('psPharmName').textContent = pharmacieName;
+
+  const rows = peerRows.filter(r => (r[COL_PEER.pharmacie] || '') === pharmacieName);
+
+  if (!rows.length) {
+    document.getElementById('psSub').textContent = 'Aucune évaluation reçue pour cette pharmacie pour l\'instant.';
+    ['psKpiResp','psKpiDefi','psKpiGlob'].forEach(id => document.getElementById(id).textContent = '—');
+    renderSingleBars('psBarsResp', RESP_LABELS, null);
+    renderSingleBars('psBarsDefi', DEFI_LABELS, null);
+    return;
+  }
+
+  document.getElementById('psSub').textContent =
+    `Moyenne des évaluations reçues (sondage "Évaluation des gestionnaires par les gestionnaires") — ${rows.length} évaluation${rows.length>1?'s':''}`;
+
+  const allScores = rows.map(r => extractScores(r, COL_PEER));
+  const avgResp = averageArrays(allScores.map(s => s.resp));
+  const avgDefi = averageArrays(allScores.map(s => s.defi));
+
+  document.getElementById('psKpiResp').textContent = geoMean(avgResp) + '%';
+  document.getElementById('psKpiDefi').textContent = geoMean(avgDefi) + '%';
+  document.getElementById('psKpiGlob').textContent = geoMean([...avgResp, ...avgDefi]) + '%';
+
+  renderSingleBars('psBarsResp', RESP_LABELS, avgResp);
+  renderSingleBars('psBarsDefi', DEFI_LABELS, avgDefi);
 }
 
 document.addEventListener('DOMContentLoaded', loadData);

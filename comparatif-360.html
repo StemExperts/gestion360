@@ -33,6 +33,9 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 .header-title { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; color:var(--white); letter-spacing:-0.5px; }
 .header-title span { color: var(--yellow); }
 .header-sub { font-size:12px; color: rgba(255,255,255,0.65); margin-top:4px; }
+.refresh-btn { background:var(--yellow); color:var(--navy); border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; transition:all .2s; font-family:'DM Sans',sans-serif; }
+.refresh-btn:hover { background:#ffe000; transform:translateY(-1px); }
+
 
 /* ── Filter bar ── */
 .filter-bar { max-width:1100px; margin:28px auto 0; padding:0 24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -122,6 +125,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
       <div class="header-title">Indice de gestion <span>360</span></div>
       <div class="header-sub">Comparatif auto-évaluation / évaluation par les pairs — accès Stem Experts</div>
     </div>
+    <button class="refresh-btn" onclick="refreshAll()">🔄 Actualiser</button>
   </div>
 </div>
 
@@ -147,7 +151,13 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 
 <div id="errorState" class="state-msg" style="display:none;">
   <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:8px;">⚠️ Erreur de chargement</p>
-  <p>Impossible de récupérer les fichiers Zoho automatiquement. Vérifiez votre connexion et rafraîchissez la page.</p>
+  <p>Impossible de récupérer les fichiers Zoho automatiquement. Importez-les manuellement ci-dessous, ou réessayez avec le bouton Actualiser.</p>
+  <div style="max-width:420px;margin:24px auto 0;text-align:left;background:var(--white);border-radius:12px;padding:20px 24px;box-shadow:var(--shadow);">
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px;">CSV — Auto-évaluation</label>
+    <input type="file" id="fileAuto" accept=".csv" style="margin-bottom:16px;width:100%;font-size:12px;">
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px;">CSV — Évaluation des gestionnaires par les gestionnaires</label>
+    <input type="file" id="filePeer" accept=".csv" style="width:100%;font-size:12px;">
+  </div>
 </div>
 
 <div id="emptyState" class="state-msg" style="display:none;">
@@ -330,10 +340,15 @@ function averageArrays(arraysList) {
 
 // ── CHARGEMENT ──
 async function loadData() {
-  const [autoText, peerText] = await Promise.all([
-    fetchViaProxies(BASE_URL_AUTO),
-    fetchViaProxies(BASE_URL_PEER),
-  ]);
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+
+  // Séquentiel plutôt qu'en parallèle : évite de saturer un même proxy avec 2 requêtes simultanées
+  const autoText = await fetchViaProxies(BASE_URL_AUTO);
+  const peerText = await fetchViaProxies(BASE_URL_PEER);
+
   if (!autoText || !peerText) {
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('errorState').style.display = 'block';
@@ -347,6 +362,27 @@ async function loadData() {
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('emptyState').style.display = 'block';
 }
+
+function refreshAll() {
+  loadData();
+}
+
+function handleManualUpload() {
+  const fAuto = document.getElementById('fileAuto').files[0];
+  const fPeer = document.getElementById('filePeer').files[0];
+  if (!fAuto || !fPeer) return; // attend que les 2 fichiers soient sélectionnés
+  Promise.all([fAuto.text(), fPeer.text()]).then(([autoText, peerText]) => {
+    autoRows = parseCSV(autoText).filter(r => rowHasValidScores(r, COL_AUTO));
+    peerRows = parseCSV(peerText).filter(r => rowHasValidScores(r, COL_PEER));
+    buildMasterList();
+    populatePharmacieFilter();
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+  });
+}
+document.getElementById('fileAuto').addEventListener('change', handleManualUpload);
+document.getElementById('filePeer').addEventListener('change', handleManualUpload);
 
 // ── LISTE MAÎTRESSE DES PARTICIPANTS (union auto + cibles pairs) ──
 function buildMasterList() {

@@ -36,6 +36,22 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 .refresh-btn { background:var(--yellow); color:var(--navy); border:none; border-radius:8px; padding:8px 18px; font-size:13px; font-weight:700; cursor:pointer; transition:all .2s; font-family:'DM Sans',sans-serif; }
 .refresh-btn:hover { background:#ffe000; transform:translateY(-1px); }
 
+.emergency-section { max-width:1100px; margin:40px auto 0; padding:0 24px; }
+.emergency-card { background:var(--white); border-radius:16px; padding:24px 28px; box-shadow:var(--shadow); border:1.5px dashed var(--navy-light); }
+.emergency-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+.emergency-subtitle { font-size:12px; color:var(--text-soft); margin-bottom:18px; }
+.emergency-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:16px; }
+@media(max-width:680px){ .emergency-grid { grid-template-columns:1fr; } }
+.efield-label { font-size:12px; font-weight:600; color:var(--text-soft); margin-bottom:6px; display:block; }
+.efield-link { font-size:11px; margin-bottom:8px; }
+.efield-link a { color:var(--blue); }
+.efield input[type=file] { width:100%; font-size:12px; padding:8px; border:1.5px solid var(--cream-dark); border-radius:8px; background:var(--cream); }
+.load-manual-btn { background:var(--navy); color:var(--white); border:none; border-radius:8px; padding:10px 22px; font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.load-manual-btn:hover { background:var(--navy-soft); }
+.emergency-status { margin-top:12px; font-size:12px; padding:8px 12px; border-radius:8px; display:none; }
+.emergency-status.ok { background:#e8f5c0; color:#3a5a00; display:block; }
+.emergency-status.err { background:#fde8e8; color:#8b1a1a; display:block; }
+
 
 /* ── Filter bar ── */
 .filter-bar { max-width:1100px; margin:28px auto 0; padding:0 24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -151,13 +167,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 
 <div id="errorState" class="state-msg" style="display:none;">
   <p style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:8px;">⚠️ Erreur de chargement</p>
-  <p>Impossible de récupérer les fichiers Zoho automatiquement. Importez-les manuellement ci-dessous, ou réessayez avec le bouton Actualiser.</p>
-  <div style="max-width:420px;margin:24px auto 0;text-align:left;background:var(--white);border-radius:12px;padding:20px 24px;box-shadow:var(--shadow);">
-    <label style="display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px;">CSV — Auto-évaluation</label>
-    <input type="file" id="fileAuto" accept=".csv" style="margin-bottom:16px;width:100%;font-size:12px;">
-    <label style="display:block;font-size:12px;font-weight:600;color:var(--text-soft);margin-bottom:6px;">CSV — Évaluation des gestionnaires par les gestionnaires</label>
-    <input type="file" id="filePeer" accept=".csv" style="width:100%;font-size:12px;">
-  </div>
+  <p>Impossible de récupérer les fichiers Zoho automatiquement. Utilisez la section "Plan B" au bas de la page pour importer les fichiers manuellement, ou réessayez avec le bouton Actualiser en haut.</p>
 </div>
 
 <div id="emptyState" class="state-msg" style="display:none;">
@@ -368,9 +378,14 @@ function refreshAll() {
 }
 
 function handleManualUpload() {
+  const statusEl = document.getElementById('emergencyStatus');
   const fAuto = document.getElementById('fileAuto').files[0];
   const fPeer = document.getElementById('filePeer').files[0];
-  if (!fAuto || !fPeer) return; // attend que les 2 fichiers soient sélectionnés
+  if (!fAuto || !fPeer) {
+    statusEl.className = 'emergency-status err';
+    statusEl.textContent = '⚠️ Sélectionnez les 2 fichiers (auto-évaluation et évaluation par les gestionnaires) avant de charger.';
+    return;
+  }
   Promise.all([fAuto.text(), fPeer.text()]).then(([autoText, peerText]) => {
     autoRows = parseCSV(autoText).filter(r => rowHasValidScores(r, COL_AUTO));
     peerRows = parseCSV(peerText).filter(r => rowHasValidScores(r, COL_PEER));
@@ -379,10 +394,13 @@ function handleManualUpload() {
     document.getElementById('errorState').style.display = 'none';
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('emptyState').style.display = 'block';
+    statusEl.className = 'emergency-status ok';
+    statusEl.textContent = `✓ ${autoRows.length} réponse(s) auto-évaluation et ${peerRows.length} réponse(s) évaluation par les pairs chargées.`;
+  }).catch(() => {
+    statusEl.className = 'emergency-status err';
+    statusEl.textContent = '⚠️ Erreur de lecture des fichiers. Vérifiez qu\'il s\'agit bien des bons CSV.';
   });
 }
-document.getElementById('fileAuto').addEventListener('change', handleManualUpload);
-document.getElementById('filePeer').addEventListener('change', handleManualUpload);
 
 // ── LISTE MAÎTRESSE DES PARTICIPANTS (union auto + cibles pairs) ──
 function buildMasterList() {
@@ -605,5 +623,26 @@ function renderRadar(autoScores, peerResp, peerDefi) {
 
 document.addEventListener('DOMContentLoaded', loadData);
 </script>
+<div class="emergency-section">
+  <div class="emergency-card">
+    <div class="emergency-title">⚡ Plan B — Chargement manuel des CSV</div>
+    <div class="emergency-subtitle">Si le chargement automatique ne fonctionne pas (ou pour charger des fichiers plus récents), déposez les 2 fichiers ci-dessous puis cliquez sur "Charger les fichiers".</div>
+    <div class="emergency-grid">
+      <div class="efield">
+        <label class="efield-label">1. CSV — Auto-évaluation</label>
+        <div class="efield-link"><a href="https://sheet.zohopublic.com/sheet/published/mniqh133e40eddf1846ec8b4cd9c0316e5890?download=csv&sheetname=Feuille1" target="_blank">⬇ Télécharger le CSV</a></div>
+        <input type="file" id="fileAuto" accept=".csv">
+      </div>
+      <div class="efield">
+        <label class="efield-label">2. CSV — Évaluation des gestionnaires par les gestionnaires</label>
+        <div class="efield-link"><a href="https://sheet.zohopublic.com/sheet/published/mniqh07f27ed4af3e44efb76fca5dda541087?download=csv&sheetname=Feuille1" target="_blank">⬇ Télécharger le CSV</a></div>
+        <input type="file" id="filePeer" accept=".csv">
+      </div>
+    </div>
+    <button class="load-manual-btn" onclick="handleManualUpload()">Charger les fichiers</button>
+    <div class="emergency-status" id="emergencyStatus"></div>
+  </div>
+</div>
+
 </body>
 </html>

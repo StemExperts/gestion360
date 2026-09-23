@@ -252,12 +252,70 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   </div>
 
   <div class="chart-card">
+    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Scores géométriques — auto-évaluation vs pairs</div>
+    <div style="position:relative;height:260px;">
+      <canvas id="compBarChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
     <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble — 10 questions</div>
     <div class="legend-row">
       <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluation</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Évaluation par les pairs (moyenne)</div>
     </div>
     <canvas id="radarChart" style="max-height:420px;"></canvas>
+    <div id="zoneBadges" style="margin-top:16px;padding-top:14px;border-top:1px solid #e8ecf2;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;"></div>
+
+    <!-- Guide d'interprétation -->
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid #e8ecf2;">
+      <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:700;margin-bottom:14px;color:var(--navy);">Guide d'Interprétation</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+        <div style="background:#fde8e8;color:#8b1a1a;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+          <strong style="display:block;font-size:13px;margin-bottom:6px;">🔴 Gestion en difficulté<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">0 % – 44 %</span></strong>
+          La gestion ne permet pas d'assurer les résultats attendus. Les actions sont majoritairement réactives, peu structurées et inconsistantes, entraînant des écarts fréquents entre les objectifs et les résultats.
+          <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+          <ul style="margin-left:14px;margin-top:4px;">
+            <li>Perte de contrôle des opérations</li>
+            <li>Climat de travail instable</li>
+            <li>Performance faible ou imprévisible</li>
+          </ul>
+        </div>
+        <div style="background:#ffe8cc;color:#8b3a00;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+          <strong style="display:block;font-size:13px;margin-bottom:6px;">🟠 Gestion en développement<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">45 % – 74 %</span></strong>
+          Certaines pratiques de gestion sont présentes, mais elles ne sont pas encore maîtrisées ni appliquées de façon constante. Les résultats sont variables et dépendent souvent des efforts individuels.
+          <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+          <ul style="margin-left:14px;margin-top:4px;">
+            <li>Résultats irréguliers</li>
+            <li>Dépendance élevée au gestionnaire</li>
+            <li>Mobilisation variable de l'équipe</li>
+          </ul>
+        </div>
+        <div style="background:#dbeafe;color:#1e3a5f;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+          <strong style="display:block;font-size:13px;margin-bottom:6px;">🔵 Gestion compétente<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">75 % – 89 %</span></strong>
+          La gestion est structurée, cohérente et appliquée de façon constante. Elle permet d'atteindre les résultats attendus de manière prévisible grâce à des pratiques claires et reproductibles.
+          <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+          <ul style="margin-left:14px;margin-top:4px;">
+            <li>Performance stable et prévisible</li>
+            <li>Meilleur contrôle des opérations</li>
+            <li>Réduction des urgences et des imprévus</li>
+          </ul>
+        </div>
+        <div style="background:#e8f5c0;color:#3a5a00;border-radius:10px;padding:14px 16px;font-size:12px;line-height:1.5;">
+          <strong style="display:block;font-size:13px;margin-bottom:6px;">🟢 Gestion accomplie<br><span style="font-weight:400;display:block;text-align:center;margin-top:2px;">90 % – 100 %</span></strong>
+          La gestion agit comme un levier stratégique de performance. Elle anticipe les besoins, optimise les pratiques et développe l'équipe en continu afin de dépasser les résultats attendus et assurer une croissance durable.
+          <div style="margin-top:8px;font-size:11px;font-weight:600;">Impact observé :</div>
+          <ul style="margin-left:14px;margin-top:4px;">
+            <li>Performance supérieure et durable</li>
+            <li>Forte mobilisation et engagement de l'équipe</li>
+            <li>Organisation résiliente et évolutive</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e8ecf2;">
+        <span style="font-size:11px;color:#888;">La classification repose sur la <strong>constance des pratiques</strong> et leur capacité à produire des résultats prévisibles — pas uniquement sur l'intention ou les efforts. Les zones sont déterminées par la <strong>moyenne géométrique</strong>, qui amplifie l'impact des scores les plus bas.</span>
+      </div>
+    </div>
   </div>
 
   <div class="chart-card">
@@ -620,15 +678,83 @@ function renderComparatif(person) {
   }
 
   // KPI cards
-  setKPI('Resp', autoScores ? geoMean(autoScores.resp) : null, peerResp ? geoMean(peerResp) : null, peerMatches.length);
-  setKPI('Defi', autoScores ? geoMean(autoScores.defi) : null, peerDefi ? geoMean(peerDefi) : null, peerMatches.length);
+  const autoRespGeo = autoScores ? geoMean(autoScores.resp) : null;
+  const autoDefiGeo = autoScores ? geoMean(autoScores.defi) : null;
+  const peerRespGeo = peerResp ? geoMean(peerResp) : null;
+  const peerDefiGeo = peerDefi ? geoMean(peerDefi) : null;
+
+  setKPI('Resp', autoRespGeo, peerRespGeo, peerMatches.length);
+  setKPI('Defi', autoDefiGeo, peerDefiGeo, peerMatches.length);
   const autoGlob = autoScores ? geoMean([...autoScores.resp, ...autoScores.defi]) : null;
   const peerGlob = (peerResp && peerDefi) ? geoMean([...peerResp, ...peerDefi]) : null;
   setKPI('Glob', autoGlob, peerGlob, peerMatches.length);
 
   renderRadar(autoScores, peerResp, peerDefi);
+  renderZoneBadges(autoGlob, peerGlob);
+  renderCompBarChart(autoRespGeo, peerRespGeo, autoDefiGeo, peerDefiGeo, autoGlob, peerGlob);
   renderDualBars('barsResp', RESP_LABELS, autoScores ? autoScores.resp : null, peerResp);
   renderDualBars('barsDefi', DEFI_LABELS, autoScores ? autoScores.defi : null, peerDefi);
+}
+
+function zoneFromGeoPct(pct) {
+  if (pct >= 90) return { label:'Gestion accomplie',        bg:'#e8f5c0', txt:'#3a7000' };
+  if (pct >= 75) return { label:'Gestion compétente',       bg:'#dbeafe', txt:'#1e3a5f' };
+  if (pct >= 45) return { label:'Gestion en développement', bg:'#ffe8cc', txt:'#8b3a00' };
+  return             { label:'Gestion en difficulté',       bg:'#fde8e8', txt:'#8b0000' };
+}
+
+function renderZoneBadges(autoGlob, peerGlob) {
+  const el = document.getElementById('zoneBadges');
+  let html = '';
+  if (autoGlob !== null) {
+    const z = zoneFromGeoPct(autoGlob);
+    html += `<span style="display:inline-block;background:${z.bg};color:${z.txt};font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:6px 14px;border-radius:20px;">Auto : ${z.label} · ${Math.round(autoGlob)}% (géo.)</span>`;
+  }
+  if (peerGlob !== null) {
+    const z = zoneFromGeoPct(peerGlob);
+    html += `<span style="display:inline-block;background:${z.bg};color:${z.txt};font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:6px 14px;border-radius:20px;">Pairs : ${z.label} · ${Math.round(peerGlob)}% (géo.)</span>`;
+  }
+  el.innerHTML = html || '<span style="font-size:12px;color:#aaa;">Pas encore assez de données pour classer cette personne.</span>';
+}
+
+let compBarChartInst = null;
+function renderCompBarChart(autoResp, peerResp, autoDefi, peerDefi, autoGlob, peerGlob) {
+  const ctx = document.getElementById('compBarChart').getContext('2d');
+  if (compBarChartInst) compBarChartInst.destroy();
+  compBarChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Responsabilités', 'Défis', 'Global'],
+      datasets: [
+        { label: 'Auto-évaluation', data: [autoResp, autoDefi, autoGlob].map(v => v !== null && v !== undefined ? Math.round(v*10)/10 : null), backgroundColor: 'rgba(29,113,184,0.85)', borderRadius: 5, borderSkipped: false },
+        { label: 'Pairs', data: [peerResp, peerDefi, peerGlob].map(v => v !== null && v !== undefined ? Math.round(v*10)/10 : null), backgroundColor: 'rgba(149,193,31,0.85)', borderRadius: 5, borderSkipped: false },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:true, position:'bottom', labels:{ font:{ size:11 } } },
+        tooltip: { callbacks: { label: ctx2 => ` ${ctx2.dataset.label} : ${ctx2.raw}%` } },
+      },
+      scales: {
+        y: { min:0, max:115, ticks:{ callback: v => v <= 100 ? v+'%':'', font:{ size:10 } }, grid:{ color:'rgba(0,0,0,0.05)' } },
+        x: { ticks:{ font:{ size:11 } }, grid:{ display:false } },
+      },
+      animation: {
+        onComplete: function() {
+          const ch = this; const c = ch.ctx;
+          c.font = 'bold 10px DM Sans'; c.textAlign = 'center'; c.textBaseline = 'bottom';
+          ch.data.datasets.forEach((ds, di) => {
+            ch.getDatasetMeta(di).data.forEach((bar, i) => {
+              const val = ds.data[i]; if (val === null || val === undefined) return;
+              c.fillStyle = '#002169';
+              c.fillText(val + '%', bar.x, bar.y - 4);
+            });
+          });
+        }
+      }
+    }
+  });
 }
 
 function setKPI(prefix, autoVal, peerVal, peerCount) {

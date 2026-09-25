@@ -139,14 +139,14 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   <div class="header-inner">
     <div>
       <div class="header-title">Indice de gestion <span>360</span></div>
-      <div class="header-sub">Comparatif auto-évaluation / évaluation par les pairs — accès Stem Experts</div>
+      <div class="header-sub">Comparatif auto-évaluation / évaluation par les pairs (gestionnaires) </div>
     </div>
     <button class="refresh-btn" onclick="refreshAll()">🔄 Actualiser</button>
   </div>
 </div>
 
 <div class="filter-bar">
-  <label for="pharmacieFilter">🏪 Pharmacie :</label>
+  <label for="pharmacieFilter"> Pharmacie :</label>
   <select id="pharmacieFilter" onchange="onPharmacieChange()">
     <option value="all">Toutes les pharmacies</option>
   </select>
@@ -207,7 +207,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis — moyenne par question (toutes évaluations de la pharmacie)</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis - moyenne par question (toutes évaluations de la pharmacie)</div>
     <div class="dual-bar-rows" id="psBarsDefi"></div>
   </div>
 
@@ -259,7 +259,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble — 10 questions</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble - 10 questions</div>
     <div class="legend-row">
       <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluation</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Évaluation par les pairs (moyenne)</div>
@@ -313,13 +313,13 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
         </div>
       </div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e8ecf2;">
-        <span style="font-size:11px;color:#888;">La classification repose sur la <strong>constance des pratiques</strong> et leur capacité à produire des résultats prévisibles — pas uniquement sur l'intention ou les efforts. Les zones sont déterminées par la <strong>moyenne géométrique</strong>, qui amplifie l'impact des scores les plus bas.</span>
+        <span style="font-size:11px;color:#888;">La classification repose sur la <strong>constance des pratiques</strong> et leur capacité à produire des résultats prévisibles - pas uniquement sur l'intention ou les efforts. Les zones sont déterminées par la <strong>moyenne géométrique</strong>, qui amplifie l'impact des scores les plus bas.</span>
       </div>
     </div>
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités — détail par question</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités - détail par question</div>
     <div class="dual-bar-rows" id="barsResp"></div>
   </div>
 
@@ -330,7 +330,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 
 </div>
 
-<div class="footer">Indice de gestion 360 — Stem Experts</div>
+<div class="footer">Indice de gestion 360 - Stem Experts</div>
 
 <script>
 // ── CONFIGURATION ──
@@ -865,16 +865,16 @@ document.addEventListener('DOMContentLoaded', loadData);
 </script>
 <div class="emergency-section">
   <div class="emergency-card">
-    <div class="emergency-title">⚡ Plan B — Chargement manuel des CSV</div>
+    <div class="emergency-title"> Chargement manuel des CSV</div>
     <div class="emergency-subtitle">Si le chargement automatique ne fonctionne pas (ou pour charger des fichiers plus récents), déposez les 2 fichiers ci-dessous puis cliquez sur "Charger les fichiers".</div>
     <div class="emergency-grid">
       <div class="efield">
-        <label class="efield-label">1. CSV — Auto-évaluation</label>
+        <label class="efield-label">1. CSV - Auto-évaluation</label>
         <div class="efield-link"><a href="https://sheet.zohopublic.com/sheet/published/mniqh133e40eddf1846ec8b4cd9c0316e5890?download=csv&sheetname=Feuille1" target="_blank">⬇ Télécharger le CSV</a></div>
         <input type="file" id="fileAuto" accept=".csv">
       </div>
       <div class="efield">
-        <label class="efield-label">2. CSV — Évaluation des gestionnaires par les gestionnaires</label>
+        <label class="efield-label">2. CSV - Évaluation des gestionnaires par les gestionnaires</label>
         <div class="efield-link"><a href="https://sheet.zohopublic.com/sheet/published/mniqh07f27ed4af3e44efb76fca5dda541087?download=csv&sheetname=Feuille1" target="_blank">⬇ Télécharger le CSV</a></div>
         <input type="file" id="filePeer" accept=".csv">
       </div>

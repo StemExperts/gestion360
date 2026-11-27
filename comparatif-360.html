@@ -160,9 +160,9 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 </div>
 
 <div class="filter-bar">
-  <label for="pharmacieFilter"> Pharmacie :</label>
+  <label for="pharmacieFilter"> Entreprise :</label>
   <select id="pharmacieFilter" onchange="onPharmacieChange()">
-    <option value="all">Toutes les pharmacies</option>
+    <option value="all">Toutes les entreprises</option>
   </select>
 
   <div class="search-wrap" id="searchWrap">
@@ -185,7 +185,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
 </div>
 
 <div id="emptyState" class="state-msg" style="display:none;">
-  <p>Sélectionnez une pharmacie et/ou recherchez un participant ci-dessus pour afficher son comparatif.</p>
+  <p>Sélectionnez une entreprise et/ou recherchez un participant ci-dessus pour afficher son comparatif.</p>
 </div>
 
 <div id="pharmacySummary" class="main" style="display:none;">
@@ -216,10 +216,10 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble de la pharmacie - 10 questions</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--navy)"></div>Vue d'ensemble de l'entreprise - 10 questions</div>
     <div class="legend-row">
-      <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluations — moyenne de la pharmacie</div>
-      <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Pairs — moyenne de la pharmacie</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluations — moyenne de l'entreprise</div>
+      <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Pairs — moyenne de l'entreprise</div>
     </div>
     <canvas id="psRadarChart" style="max-height:420px;"></canvas>
     <div class="legend-row" style="margin-top:10px;gap:16px;font-size:11px;">
@@ -230,12 +230,12 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités — moyenne par question (toutes évaluations de la pharmacie)</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--blue)"></div>Responsabilités — moyenne par question (toutes évaluations de l'entreprise)</div>
     <div class="dual-bar-rows" id="psBarsResp"></div>
   </div>
 
   <div class="chart-card">
-    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis - moyenne par question (toutes évaluations de la pharmacie)</div>
+    <div class="card-title"><div class="card-title-dot" style="background:var(--green)"></div>Défis - moyenne par question (toutes évaluations de l'entreprise)</div>
     <div class="dual-bar-rows" id="psBarsDefi"></div>
   </div>
 
@@ -250,7 +250,7 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
     <h2 id="pName">—</h2>
     <div class="participant-sub" id="pSub"></div>
     <div class="status-badges" id="statusBadges"></div>
-    <label class="group-toggle"><input type="checkbox" id="groupToggle" checked onchange="rerenderCurrent()"> Comparer à la pharmacie au complet <span class="gt-count" id="groupToggleCount"></span></label>
+    <label class="group-toggle"><input type="checkbox" id="groupToggle" checked onchange="rerenderCurrent()"> Comparer à l'entreprise au complet <span class="gt-count" id="groupToggleCount"></span></label>
   </div>
 
   <div class="kpi-grid">
@@ -295,8 +295,8 @@ body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(
     <div class="legend-row">
       <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Auto-évaluation</div>
       <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Évaluation par les pairs (moyenne)</div>
-      <div class="legend-item grp-legend"><span class="legend-dash" style="border-color:rgba(29,113,184,0.6)"></span> Pharmacie — auto</div>
-      <div class="legend-item grp-legend"><span class="legend-dash" style="border-color:rgba(149,193,31,0.8)"></span> Pharmacie — pairs</div>
+      <div class="legend-item grp-legend"><span class="legend-dash" style="border-color:rgba(29,113,184,0.6)"></span> Entreprise — auto</div>
+      <div class="legend-item grp-legend"><span class="legend-dash" style="border-color:rgba(149,193,31,0.8)"></span> Entreprise — pairs</div>
     </div>
     <canvas id="radarChart" style="max-height:420px;"></canvas>
     <div class="legend-row" style="margin-top:10px;gap:16px;font-size:11px;">
@@ -439,26 +439,26 @@ function geoMean(vals) {
   return Math.round(y * 1000) / 10;
 }
 
+// Lit le CSV caractère par caractère : un retour à la ligne à l'intérieur d'un champ entre guillemets
+// (ex. commentaire « Pourquoi? Exemple » sur plusieurs lignes) ne coupe plus la réponse en deux.
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  if (lines.length < 2) return [];
-  return lines.slice(1).map(line => {
-    const cols = []; let cur = '', inQ = false;
-    for (let i = 0; i < line.length; i++) {
-      const c = line[i];
-      if (inQ) {
-        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
-        else if (c === '"') inQ = false;
-        else cur += c;
-      } else {
-        if (c === '"') inQ = true;
-        else if (c === ',') { cols.push(cur.trim()); cur = ''; }
-        else cur += c;
-      }
+  text = (text || '').replace(/^\uFEFF/, '');
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(cur.trim()); cur = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      row.push(cur.trim()); rows.push(row); row = []; cur = '';
     }
-    cols.push(cur.trim());
-    return cols;
-  });
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur.trim()); rows.push(row); }
+  return rows.slice(1).filter(r => r.some(v => v !== ''));
 }
 
 function rowHasValidScores(row, colDef) {
@@ -583,7 +583,7 @@ function buildMasterList() {
 function populatePharmacieFilter() {
   const sel = document.getElementById('pharmacieFilter');
   const pharmacies = [...new Set(masterList.map(p => p.pharmacie).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  sel.innerHTML = '<option value="all">Toutes les pharmacies</option>' +
+  sel.innerHTML = '<option value="all">Toutes les entreprises</option>' +
     pharmacies.map(p => `<option value="${p.replace(/"/g,'&quot;')}">${p}</option>`).join('');
 }
 
@@ -752,7 +752,7 @@ function renderComparatif(person) {
   const showGroup = toggle.checked && !!person.pharmacie;
   document.getElementById('groupToggleCount').textContent = person.pharmacie
     ? `(${person.pharmacie} : ${G.nAuto} auto-évaluation${G.nAuto>1?'s':''} · ${G.nPeer} évaluation${G.nPeer>1?'s':''} par les pairs)`
-    : '(pharmacie inconnue)';
+    : '(entreprise inconnue)';
   document.querySelectorAll('.grp-legend').forEach(el => el.style.display = showGroup ? 'flex' : 'none');
   setGroupKPI('Resp', G.autoRespGeo, G.peerRespGeo, showGroup);
   setGroupKPI('Defi', G.autoDefiGeo, G.peerDefiGeo, showGroup);
@@ -799,8 +799,8 @@ function renderCompBarChart(autoResp, peerResp, autoDefi, peerDefi, autoGlob, pe
         { label: 'Auto-évaluation', data: [autoResp, autoDefi, autoGlob].map(v => v !== null && v !== undefined ? Math.round(v*10)/10 : null), backgroundColor: 'rgba(29,113,184,0.85)', borderRadius: 5, borderSkipped: false },
         { label: 'Pairs', data: [peerResp, peerDefi, peerGlob].map(v => v !== null && v !== undefined ? Math.round(v*10)/10 : null), backgroundColor: 'rgba(149,193,31,0.85)', borderRadius: 5, borderSkipped: false },
         ...(G ? [
-          { label: 'Pharmacie — auto', isGroup: true, data: [G.autoRespGeo, G.autoDefiGeo, G.autoGlob].map(round1), backgroundColor: 'rgba(29,113,184,0.30)', borderRadius: 5, borderSkipped: false },
-          { label: 'Pharmacie — pairs', isGroup: true, data: [G.peerRespGeo, G.peerDefiGeo, G.peerGlob].map(round1), backgroundColor: 'rgba(149,193,31,0.35)', borderRadius: 5, borderSkipped: false },
+          { label: 'Entreprise — auto', isGroup: true, data: [G.autoRespGeo, G.autoDefiGeo, G.autoGlob].map(round1), backgroundColor: 'rgba(29,113,184,0.30)', borderRadius: 5, borderSkipped: false },
+          { label: 'Entreprise — pairs', isGroup: true, data: [G.peerRespGeo, G.peerDefiGeo, G.peerGlob].map(round1), backgroundColor: 'rgba(149,193,31,0.35)', borderRadius: 5, borderSkipped: false },
         ] : []),
       ]
     },
@@ -868,8 +868,8 @@ function renderRadar(autoScores, peerResp, peerDefi, G) {
       borderColor: '#95c11f', backgroundColor: 'rgba(149,193,31,0.15)', pointBackgroundColor: '#95c11f',
     });
   }
-  if (G && G.autoResp) datasets.push(groupRadarDS('Pharmacie — auto', [...G.autoResp, ...G.autoDefi].map(round1), 'auto'));
-  if (G && G.peerResp) datasets.push(groupRadarDS('Pharmacie — pairs', [...G.peerResp, ...G.peerDefi].map(round1), 'peer'));
+  if (G && G.autoResp) datasets.push(groupRadarDS('Entreprise — auto', [...G.autoResp, ...G.autoDefi].map(round1), 'auto'));
+  if (G && G.peerResp) datasets.push(groupRadarDS('Entreprise — pairs', [...G.peerResp, ...G.peerDefi].map(round1), 'peer'));
   const ctx = document.getElementById('radarChart').getContext('2d');
   if (radarChartInst) radarChartInst.destroy();
   radarChartInst = new Chart(ctx, {
@@ -905,11 +905,11 @@ function renderPharmacyRadar(pharmVals) {
   const G = computeGroup(currentPharmacieFilter());
   const datasets = [];
   if (pharmVals) datasets.push({
-    label: 'Pairs — pharmacie', data: pharmVals.map(round1),
+    label: 'Pairs — entreprise', data: pharmVals.map(round1),
     borderColor: '#95c11f', backgroundColor: 'rgba(149,193,31,0.18)', pointBackgroundColor: '#95c11f',
   });
   if (G.autoResp) datasets.push({
-    label: 'Auto-évaluations — pharmacie', data: [...G.autoResp, ...G.autoDefi].map(round1),
+    label: 'Auto-évaluations — entreprise', data: [...G.autoResp, ...G.autoDefi].map(round1),
     borderColor: '#1d71b8', backgroundColor: 'rgba(29,113,184,0.15)', pointBackgroundColor: '#1d71b8',
   });
   const ctx = document.getElementById('psRadarChart').getContext('2d');
@@ -932,7 +932,7 @@ function renderPharmacySummary(pharmacieName) {
   const rows = peerRows.filter(r => (r[COL_PEER.pharmacie] || '') === pharmacieName);
 
   if (!rows.length) {
-    document.getElementById('psSub').textContent = 'Aucune évaluation reçue pour cette pharmacie pour l\'instant.';
+    document.getElementById('psSub').textContent = 'Aucune évaluation reçue pour cette entreprise pour l\'instant.';
     ['psKpiResp','psKpiDefi','psKpiGlob'].forEach(id => document.getElementById(id).textContent = '—');
     renderSingleBars('psBarsResp', RESP_LABELS, null);
     renderSingleBars('psBarsDefi', DEFI_LABELS, null);
@@ -965,7 +965,7 @@ function setGroupKPI(prefix, gAuto, gPeer, show) {
   if (!el) return;
   if (!show) { el.style.display = 'none'; return; }
   el.style.display = 'block';
-  el.innerHTML = `Pharmacie — <b class="ga">auto ${fmtPct(gAuto)}</b> · <b class="gp">pairs ${fmtPct(gPeer)}</b>`;
+  el.innerHTML = `Entreprise — <b class="ga">auto ${fmtPct(gAuto)}</b> · <b class="gp">pairs ${fmtPct(gPeer)}</b>`;
 }
 
 function rerenderCurrent() {
@@ -988,8 +988,8 @@ function renderDualBars(containerId, labels, autoVals, peerVals, gAutoVals, gPee
     let html = `<div class="dual-bar-row"><div class="dbr-label">${label}</div>`;
     html += dbrLine('auto', 'Auto', autoVals ? autoVals[i] : null);
     html += dbrLine('peer', 'Pairs', peerVals ? peerVals[i] : null);
-    if (gAutoVals) html += dbrLine('gauto', 'Ph. auto', gAutoVals[i]);
-    if (gPeerVals) html += dbrLine('gpeer', 'Ph. pairs', gPeerVals[i]);
+    if (gAutoVals) html += dbrLine('gauto', 'Ent. auto', gAutoVals[i]);
+    if (gPeerVals) html += dbrLine('gpeer', 'Ent. pairs', gPeerVals[i]);
     return html + '</div>';
   }).join('');
 }
